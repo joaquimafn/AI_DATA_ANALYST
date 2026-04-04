@@ -3,6 +3,7 @@
 import { useNL2SQL } from '@/hooks/useNL2SQL'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { ChatMessage } from '@/components/chat/ChatMessage'
+import { MessageSkeleton } from '@/components/state'
 
 function Header() {
   return (
@@ -26,7 +27,13 @@ function Header() {
   )
 }
 
-function EmptyState() {
+function EmptyState({ onSuggestionClick }: { onSuggestionClick: (q: string) => void }) {
+  const suggestions = [
+    'Quais são os 10 produtos mais vendidos?',
+    'Qual o faturamento por região no último mês?',
+    'Quantos clientes fizeram compras esta semana?',
+  ]
+
   return (
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center max-w-md px-4">
@@ -55,9 +62,16 @@ function EmptyState() {
         <div className="mt-6 space-y-2 text-left">
           <p className="text-sm font-medium text-gray-700">Exemplos:</p>
           <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Quais são os 10 produtos mais vendidos?</li>
-            <li>• Qual o faturamento por região no último mês?</li>
-            <li>• Quantos clientes fizeram compras esta semana?</li>
+            {suggestions.map((suggestion, i) => (
+              <li key={i}>
+                <button
+                  onClick={() => onSuggestionClick(suggestion)}
+                  className="text-left hover:text-primary-600 transition-colors"
+                >
+                  • {suggestion}
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -65,40 +79,90 @@ function EmptyState() {
   )
 }
 
+function HistoryPanel({
+  history,
+  onSelect,
+}: {
+  history: string[]
+  onSelect: (q: string) => void
+}) {
+  if (history.length === 0) return null
+
+  return (
+    <div className="bg-white border-b border-gray-200 px-4 py-3">
+      <p className="text-xs font-medium text-gray-500 uppercase mb-2">Histórico</p>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {history.slice(0, 5).map((q, i) => (
+          <button
+            key={i}
+            onClick={() => onSelect(q)}
+            className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 whitespace-nowrap transition-colors"
+          >
+            {q.length > 40 ? q.slice(0, 40) + '...' : q}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
-  const { messages, isLoading, error, sendQuestion, clearMessages } = useNL2SQL()
+  const {
+    messages,
+    isLoading,
+    error,
+    sendQuestion,
+    clearMessages,
+    retryLastQuestion,
+    historyQuestions,
+  } = useNL2SQL()
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
 
+      {historyQuestions.length > 0 && messages.length === 0 && (
+        <HistoryPanel history={historyQuestions} onSelect={sendQuestion} />
+      )}
+
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 flex flex-col">
-        {messages.length === 0 ? (
-          <EmptyState />
+        {messages.length === 0 && !isLoading ? (
+          <EmptyState onSuggestionClick={sendQuestion} />
         ) : (
           <div className="flex-1 overflow-y-auto space-y-4 pb-4">
             {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+              <ChatMessage
+                key={message.id}
+                message={message}
+                onRetry={retryLastQuestion}
+              />
             ))}
+            {isLoading && <MessageSkeleton />}
           </div>
         )}
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 text-sm">{error}</p>
+        {error && !isLoading && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg animate-in fade-in duration-200">
+            <p className="text-red-700 text-sm mb-2">{error}</p>
+            <button
+              onClick={retryLastQuestion}
+              className="text-xs text-red-600 hover:text-red-800 font-medium underline"
+            >
+              Tentar novamente
+            </button>
           </div>
         )}
 
-        <div className="bg-white border-t border-gray-200 -mx-4 px-4 py-4 sticky bottom-0">
+        <div className="bg-white border-t border-gray-200 -mx-4 px-4 py-4 sticky bottom-0 shadow-lg">
           <ChatInput
             onSend={sendQuestion}
             isLoading={isLoading}
           />
           {messages.length > 0 && (
-            <div className="mt-3 flex justify-center">
+            <div className="mt-3 flex justify-center gap-4">
               <button
                 onClick={clearMessages}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 Limpar conversa
               </button>

@@ -1,8 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { sendQuery, ApiError } from '@/lib/api'
 import type { QueryRequest, QueryResponse, ChatMessage } from '@/lib/types'
+
+const STORAGE_KEY = 'ai-data-analyst-history'
+const MAX_HISTORY = 50
 
 interface UseNL2SQLReturn {
   messages: ChatMessage[]
@@ -10,12 +13,39 @@ interface UseNL2SQLReturn {
   error: string | null
   sendQuestion: (question: string) => Promise<void>
   clearMessages: () => void
+  retryLastQuestion: () => Promise<void>
+  historyQuestions: string[]
+}
+
+function loadHistory(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+function saveHistory(history: string[]) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)))
+  } catch {
+    console.error('Failed to save history')
+  }
 }
 
 export function useNL2SQL(): UseNL2SQLReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null)
+  const [historyQuestions, setHistoryQuestions] = useState<string[]>([])
+
+  useEffect(() => {
+    setHistoryQuestions(loadHistory())
+  }, [])
 
   const sendQuestion = useCallback(async (question: string) => {
     const messageId = crypto.randomUUID()
@@ -31,6 +61,11 @@ export function useNL2SQL(): UseNL2SQLReturn {
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
     setError(null)
+    setLastQuestion(question)
+
+    const newHistory = [question, ...loadHistory().filter(q => q !== question)].slice(0, MAX_HISTORY)
+    saveHistory(newHistory)
+    setHistoryQuestions(newHistory)
 
     try {
       const request: QueryRequest = { question }
@@ -73,9 +108,16 @@ export function useNL2SQL(): UseNL2SQLReturn {
     }
   }, [])
 
+  const retryLastQuestion = useCallback(async () => {
+    if (lastQuestion) {
+      await sendQuestion(lastQuestion)
+    }
+  }, [lastQuestion, sendQuestion])
+
   const clearMessages = useCallback(() => {
     setMessages([])
     setError(null)
+    setLastQuestion(null)
   }, [])
 
   return {
@@ -84,5 +126,7 @@ export function useNL2SQL(): UseNL2SQLReturn {
     error,
     sendQuestion,
     clearMessages,
+    retryLastQuestion,
+    historyQuestions,
   }
 }
