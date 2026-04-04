@@ -62,6 +62,7 @@ select = [
 ignore = [
     "E501",   # line too long (handled by formatter)
     "S101",   # assert in tests is fine
+    "S608",   # hardcoded SQL - we validate table_name before use
 ]
 
 [tool.ruff.format]

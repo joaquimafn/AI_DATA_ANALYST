@@ -16,6 +16,12 @@ class TableSchema(BaseModel):
     columns: list[ColumnSchema] = Field(default_factory=list)
     row_count: int | None = None
 
+    def get_column(self, column_name: str) -> ColumnSchema | None:
+        for col in self.columns:
+            if col.name == column_name:
+                return col
+        return None
+
 
 class DatabaseSchema(BaseModel):
     tables: list[TableSchema] = Field(default_factory=list)
