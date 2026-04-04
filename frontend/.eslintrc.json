@@ -1,0 +1,20 @@
+{
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "rules": {
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-debugger": "warn",
+    "no-alert": "warn",
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "no-param-reassign": "warn",
+    "no-proto": "error",
+    "no-script-url": "error",
+    "no-shadow": "warn",
+    "no-unused-vars": "off",
+    "react/no-unescaped-entities": "off",
+    "react/display-name": "off"
+  }
+}

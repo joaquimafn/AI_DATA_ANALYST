@@ -266,8 +266,55 @@ Usuário → Pergunta NL → Schema → LLM → SQL → Validação → Execuç�
 | 2 | Database Layer (Schema Service) | ✅ Completo |
 | 3 | NL2SQL Core (LLM, Validator, Executor) | ✅ Completo |
 | 4 | Caching & Performance (Redis, Rate Limiting) | ✅ Completo |
-| 5 | Insight Generation (LLM Analytics) | ⏳ Próximo |
+| 5 | Insight Generation (LLM Analytics) | ⏳ Pendente |
 | 6 | Security Hardening & Polish | ⏳ Pendente |
+
+---
+
+## Frontend (Next.js)
+
+### Sprints Frontend
+
+| Sprint | Foco | Status |
+|--------|------|--------|
+| 1 | Foundation & Chat Interface | ✅ Completo |
+| 2 | Visualização de Dados (Gráficos) | ⏳ Próximo |
+| 3 | UX & Polish (Loading, Erros, Histórico) | ⏳ Pendente |
+| 4 | Mobile & Acessibilidade | ⏳ Pendente |
+
+### Frontend - Comandos
+
+```bash
+cd frontend
+
+# Instalar dependências
+npm install
+
+# Desenvolvimento
+npm run dev
+
+# Build
+npm run build
+
+# Verificações de segurança
+npm run lint         # ESLint
+npm run typecheck    # TypeScript
+npm run audit        # Vulnerabilidades (production)
+npm run security:check  # Todas as verificações
+```
+
+### Frontend - Estrutura
+
+```
+frontend/
+├── app/              # Next.js App Router
+├── components/       # Componentes React
+│   ├── ui/          # Button, Card, Input
+│   └── chat/        # ChatInput, ChatMessage
+├── hooks/           # useNL2SQL
+├── lib/             # api.ts, types.ts
+└── package.json
+```
 
 ---
 
