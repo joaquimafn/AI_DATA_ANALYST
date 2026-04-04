@@ -257,6 +257,8 @@ Usuário → Pergunta NL → Schema → LLM → SQL → Validação → Execuç�
 5. **Query Executor** — Executa query com timeout, limite e conexão readonly
 6. **Cache Service** — Cache Redis para resultados (TTL configurável)
 7. **Rate Limiting** — Middleware de rate limit por IP
+8. **Insight Service** — Geração de insights analíticos via LLM
+9. **Audit Logger** — Logging de auditoria para todas as queries executadas
 
 ### Roadmap de Sprints
 
@@ -266,8 +268,8 @@ Usuário → Pergunta NL → Schema → LLM → SQL → Validação → Execuç�
 | 2 | Database Layer (Schema Service) | ✅ Completo |
 | 3 | NL2SQL Core (LLM, Validator, Executor) | ✅ Completo |
 | 4 | Caching & Performance (Redis, Rate Limiting) | ✅ Completo |
-| 5 | Insight Generation (LLM Analytics) | ⏳ Pendente |
-| 6 | Security Hardening & Polish | ⏳ Pendente |
+| 5 | Insight Generation (LLM Analytics) | ✅ Completo |
+| 6 | Security Hardening & Audit Logging | ✅ Completo |
 
 ---
 
@@ -336,9 +338,9 @@ MIT License - Use livremente para projetos pessoais e comerciais.
 
 ## Estatísticas
 
-- **107 testes** passando
-- **78%** coverage
-- **19 arquivos** fonte verificados com mypy
+- **140 testes** passando
+- **81%** coverage
+- **21 arquivos** fonte verificados com mypy
 - **0 issues** de segurança (bandit)
 
 ---

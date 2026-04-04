@@ -88,6 +88,8 @@ async def process_query(request: QueryRequest) -> QueryResponse:
             sql=result.get("sql", ""),
             explanation=result.get("explanation") or "",
             data=result.get("data"),
+            chart_type=result.get("chart_type"),
+            insight=result.get("insight"),
             cached=result.get("cached", False),
             error=result.get("error"),
         )
@@ -97,6 +99,8 @@ async def process_query(request: QueryRequest) -> QueryResponse:
             sql="",
             explanation="",
             data=None,
+            chart_type=None,
+            insight=None,
             cached=False,
             error=str(e),
         )

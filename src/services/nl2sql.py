@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.core.audit import AuditContext
 from src.core.config import get_settings
 from src.core.logging import get_logger
 from src.exceptions import SQLValidationError
 from src.models.schema import DatabaseSchema
 from src.services.executor import QueryExecutor
+from src.services.insight import InsightService, create_insight_service
 from src.services.llm import LLMManager, create_llm_manager
 from src.services.schema import SchemaService
 from src.services.validator import SQLValidator
@@ -47,10 +49,12 @@ class NL2SQLService:
         self,
         llm_manager: LLMManager | None = None,
         schema_service: SchemaService | None = None,
+        insight_service: InsightService | None = None,
         cache_enabled: bool = True,
     ) -> None:
         self.llm = llm_manager or create_llm_manager()
         self.schema_service = schema_service or SchemaService()
+        self.insight_service = insight_service or create_insight_service()
         self.validator = SQLValidator()
         self.executor = QueryExecutor()
         self.cache_enabled = cache_enabled
@@ -126,7 +130,11 @@ class NL2SQLService:
             raise SQLValidationError(f"Invalid SQL: {message}")
 
         sql = self.validator.add_limit_if_missing(sql)
-        return await self.executor.execute(sql)
+
+        with AuditContext(query=sql) as audit_ctx:
+            result = await self.executor.execute(sql)
+            audit_ctx.set_result(result)
+            return result
 
     async def process_question(self, question: str) -> dict[str, Any]:
         """Process a natural language question end-to-end."""
@@ -147,6 +155,8 @@ class NL2SQLService:
                 "sql": sql,
                 "explanation": None,
                 "data": None,
+                "insight": None,
+                "chart_type": None,
                 "error": validation_message,
                 "cached": False,
             }
@@ -164,17 +174,32 @@ class NL2SQLService:
                 "sql": sql,
                 "explanation": explanation,
                 "data": None,
+                "insight": None,
+                "chart_type": None,
                 "error": str(e),
                 "cached": False,
             }
             await self._cache_result(question, error_result)
             return error_result
 
+        insight = await self.insight_service.generate_insight(
+            question=question,
+            sql=sql,
+            data=data,
+        )
+
+        chart_type = self.insight_service.suggest_chart_type(
+            data=data,
+            question=question,
+        )
+
         success_result: dict[str, Any] = {
             "question": question,
             "sql": sql,
             "explanation": explanation,
             "data": data,
+            "insight": insight,
+            "chart_type": chart_type,
             "error": None,
             "cached": False,
         }
