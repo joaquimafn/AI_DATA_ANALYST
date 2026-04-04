@@ -17,6 +17,7 @@ class QueryResponse(BaseModel):
     chart_type: str | None = None
     insight: str | None = None
     cached: bool = False
+    error: str | None = None
 
 
 class ErrorResponse(BaseModel):

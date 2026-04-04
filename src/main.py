@@ -10,7 +10,9 @@ from fastapi.responses import JSONResponse
 from src.core.config import get_settings
 from src.core.database import check_database_connection, check_redis_connection
 from src.core.logging import get_logger, setup_logging
+from src.core.rate_limit import RateLimitMiddleware
 from src.models.queries import ErrorResponse, HealthResponse, QueryRequest, QueryResponse
+from src.services.nl2sql import NL2SQLService
 
 settings = get_settings()
 logger = get_logger(__name__)
@@ -30,6 +32,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.middleware("http")
@@ -70,16 +74,32 @@ async def health_check() -> HealthResponse:
     )
 
 
+nl2sql_service = NL2SQLService(cache_enabled=True)
+
+
 @app.post("/api/v1/query", response_model=QueryResponse, tags=["query"])
 async def process_query(request: QueryRequest) -> QueryResponse:
     logger.info("Query request received", question=request.question)
 
-    return QueryResponse(
-        sql="SELECT 1 as placeholder",
-        explanation="This is a placeholder response. Full pipeline coming in Sprint 3.",
-        data=[{"placeholder": "data"}],
-        cached=False,
-    )
+    try:
+        result = await nl2sql_service.process_question(request.question)
+
+        return QueryResponse(
+            sql=result.get("sql", ""),
+            explanation=result.get("explanation") or "",
+            data=result.get("data"),
+            cached=result.get("cached", False),
+            error=result.get("error"),
+        )
+    except Exception as e:
+        logger.error("Query processing failed", error=str(e))
+        return QueryResponse(
+            sql="",
+            explanation="",
+            data=None,
+            cached=False,
+            error=str(e),
+        )
 
 
 @app.get("/", tags=["root"])

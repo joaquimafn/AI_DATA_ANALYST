@@ -107,26 +107,30 @@ uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
 AI-DATA-ANALYST/
 ├── src/
 │   ├── main.py              # FastAPI app entry point
+│   ├── exceptions.py        # Exceções customizadas
 │   ├── core/
 │   │   ├── config.py       # Configurações (Pydantic Settings)
 │   │   ├── database.py     # Conexão async com PostgreSQL
-│   │   └── logging.py      # Logging estruturado
+│   │   ├── logging.py      # Logging estruturado
+│   │   └── rate_limit.py   # Rate limiting middleware
 │   ├── models/
 │   │   ├── queries.py      # Request/Response models
 │   │   └── schema.py       # Modelos de schema do banco
-│   ├── services/           # (Implementação futura)
-│   │   ├── schema.py       # Extração de metadata
+│   ├── services/
+│   │   ├── schema.py       # Extração de metadata do banco
 │   │   ├── nl2sql.py       # Conversão NL→SQL via LLM
 │   │   ├── validator.py    # Validação de segurança SQL
 │   │   ├── executor.py     # Execução de queries
-│   │   └── insight.py      # Geração de insights
+│   │   ├── llm.py          # Abstração de LLM (OpenAI/Anthropic)
+│   │   └── insight.py      # Geração de insights (futuro)
 │   └── utils/
 │       └── cache.py        # Cache Redis
 ├── tests/
-│   ├── unit/               # Testes unitários
+│   ├── unit/               # Testes unitários (107 testes)
 │   └── integration/        # Testes de integração
-├── docker-compose.yml      # Postgres + Redis
-├── pyproject.toml          # Dependências Python
+├── docker-compose.yml      # Postgres 15 + Redis 7
+├── pyproject.toml          # Dependências Python (uv)
+├── Makefile               # Comandos de desenvolvimento
 └── AGENTS.md              # Guias para desenvolvedores
 ```
 
@@ -238,28 +242,32 @@ ruff check . && mypy src/ && bandit -r src/ && safety check && pytest tests/unit
 
 ## Desenvolvimento
 
-### Pipeline NL2SQL (Planejado)
+### Pipeline NL2SQL
 
 ```
-Usuário → Pergunta NL → Schema → LLM → SQL → Validação → Execução → Insight → Resposta
+Usuário → Pergunta NL → Schema → LLM → SQL → Validação → Execução → Cache → Resposta
+                                                            ↓
+                                                       Insight (futuro)
 ```
 
 1. **Schema Service** — Extrai metadata do banco (tabelas, colunas, tipos)
-2. **NL2SQL Service** — Converte pergunta em SQL usando LLM
-3. **SQL Validator** — Valida segurança do SQL gerado
-4. **Query Executor** — Executa query com timeout e limite
-5. **Insight Generator** — Gera insight analítico via LLM
+2. **LLM Manager** — Abstração para OpenAI GPT-4 / Anthropic Claude
+3. **NL2SQL Service** — Converte pergunta em SQL usando LLM
+4. **SQL Validator** — Valida segurança do SQL gerado (AST parsing)
+5. **Query Executor** — Executa query com timeout, limite e conexão readonly
+6. **Cache Service** — Cache Redis para resultados (TTL configurável)
+7. **Rate Limiting** — Middleware de rate limit por IP
 
 ### Roadmap de Sprints
 
 | Sprint | Foco | Status |
 |--------|------|--------|
 | 1 | Foundation (FastAPI, config, models) | ✅ Completo |
-| 2 | Database Layer (Schema Service) | ⏳ Pendente |
-| 3 | NL2SQL Core (LLM, Validator, Executor) | ⏳ Pendente |
-| 4 | Caching & Performance | ⏳ Pendente |
-| 5 | Insight Generation | ⏳ Pendente |
-| 6 | Security Hardening | ⏳ Pendente |
+| 2 | Database Layer (Schema Service) | ✅ Completo |
+| 3 | NL2SQL Core (LLM, Validator, Executor) | ✅ Completo |
+| 4 | Caching & Performance (Redis, Rate Limiting) | ✅ Completo |
+| 5 | Insight Generation (LLM Analytics) | ⏳ Próximo |
+| 6 | Security Hardening & Polish | ⏳ Pendente |
 
 ---
 
@@ -276,6 +284,15 @@ MIT License - Use livremente para projetos pessoais e comerciais.
 3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
 4. Push para a branch (`git push origin feature/nova-funcionalidade`)
 5. Abra um Pull Request
+
+---
+
+## Estatísticas
+
+- **107 testes** passando
+- **78%** coverage
+- **19 arquivos** fonte verificados com mypy
+- **0 issues** de segurança (bandit)
 
 ---
 

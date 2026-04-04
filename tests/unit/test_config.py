@@ -1,7 +1,6 @@
 """Unit tests for core config"""
 
 
-
 def test_settings_default_values():
     from src.core.config import Settings
 

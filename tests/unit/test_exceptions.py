@@ -1,7 +1,6 @@
 """Unit tests for exceptions"""
 
 
-
 def test_base_exception():
     from src.exceptions import AIDataAnalystError
 
